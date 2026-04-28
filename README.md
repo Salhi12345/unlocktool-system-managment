@@ -10,6 +10,8 @@
 - Export to Excel  
 - Dark/Light theme toggle  
 - Fully responsive sidebar navigation  
+screenshots :
+<img width="1436" height="856" alt="image" src="https://github.com/user-attachments/assets/558f5de9-347a-46b1-adab-2d11c0c54316" />
 
 ## 🔐 Admin Login Credentials
 +212772016185
