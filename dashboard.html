@@ -40,7 +40,6 @@
             box-shadow:0 2px 8px rgba(0,0,0,0.3);
         }
         .menu-toggle:hover{background:#6366f1;transform:scale(1.02)}
-        /* When sidebar collapsed, adjust main content margin for desktop */
         @media (min-width: 993px){
             .main-content.expanded{margin-left:0}
             .main-content:not(.expanded){margin-left:280px}
@@ -68,11 +67,7 @@
         .action-btn:hover{background:rgba(99,102,241,0.6);transform:scale(1.05)}
         .btn-glass{background:rgba(255,255,255,0.1);backdrop-filter:blur(4px);border:none;border-radius:40px;padding:8px 20px;font-weight:500;transition:all 0.3s;color:white;cursor:pointer}
         .btn-glass:hover{background:rgba(99,102,241,0.6);transform:translateY(-2px)}
-        /* Ensure content is not hidden behind fixed toggle */
         .main-content{padding-top:20px}
-        @media (min-width: 993px){
-            .main-content{padding-left:24px;padding-right:24px}
-        }
     </style>
 </head>
 <body>
@@ -91,7 +86,7 @@
 </div>
 <div class="main-content" id="mainContent">
     <div id="dashboard-page" class="page-section active-page"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-bottom:2rem"><div class="glass-card kpi-card p-5 text-center"><i class="fas fa-chart-simple text-2xl text-indigo-400"></i><div class="kpi-value mt-2" id="kpiTotalRevenue">$0</div><div class="text-sm">Total Revenue</div></div><div class="glass-card kpi-card p-5 text-center"><i class="fas fa-users text-2xl text-pink-400"></i><div class="kpi-value mt-2" id="kpiTotalAccounts">0</div><div class="text-sm">Accounts Used</div></div><div class="glass-card kpi-card p-5 text-center"><i class="fas fa-bug text-2xl text-amber-400"></i><div class="kpi-value mt-2" id="kpiTotalBugs">0</div><div class="text-sm">Bugs Reported</div></div><div class="glass-card kpi-card p-5 text-center"><i class="fas fa-exclamation-triangle text-2xl text-red-400"></i><div class="kpi-value mt-2" id="kpiOpenIssues">0</div><div class="text-sm">Open Issues</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem"><div class="glass-card p-5"><h3>Sales by Category</h3><canvas id="dashboardSalesChart" height="200"></canvas></div><div class="glass-card p-5"><h3>Bugs per Product</h3><canvas id="dashboardBugsChart" height="200"></canvas></div></div></div>
-    <div id="sales-category-page" class="page-section"><h2 class="mb-4">📊 Sales by Category</h2><div class="glass-card p-5"><div class="mb-3 text-end"><button id="addProductBtn" class="btn-glass"><i class="fas fa-plus"></i> Add Product</button></div><table class="data-table w-full"><thead><tr><th>Product</th><th>Units Sold</th><th>Revenue ($)</th><th>Actions</th></tr></thead><tbody id="salesCategoryTable"></tbody></table></div></div>
+    <div id="sales-category-page" class="page-section"><h2 class="mb-4">📊 Sales by Category</h2><div class="glass-card p-5"><div class="mb-3 text-end"><button id="addProductBtn" class="btn-glass"><i class="fas fa-plus"></i> Add Product</button></div><table class="data-table w-full"><thead><tr><th>Product</th><th>Units Sold</th><th>Revenue ($)</th><th>Actions</th></table></thead><tbody id="salesCategoryTable"></tbody></table></div></div>
     <div id="accounts-usage-page" class="page-section"><h2 class="mb-4">👥 Accounts Used per Client</h2><div class="glass-card p-5"><div class="mb-3 text-end"><button id="addClientBtn" class="btn-glass"><i class="fas fa-plus"></i> Add Client</button></div><table class="data-table w-full"><thead><tr><th>Client</th><th>Accounts Used</th><th>Bugs Reported</th><th>Status</th><th>Actions</th></tr></thead><tbody id="accountsUsageTable"></tbody></table></div></div>
     <div id="bugs-overview-page" class="page-section"><h2 class="mb-4">🐞 Bugs Overview</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem"><div class="glass-card p-5"><canvas id="bugsPieChart" height="250"></canvas></div><div class="glass-card p-5"><h3>Bug Trend</h3><canvas id="bugsTrendChart" height="200"></canvas></div></div></div>
     <div id="problems-in-acts-page" class="page-section"><h2 class="mb-4">⚠️ Problems in Acts</h2><div class="glass-card p-5"><div class="mb-3 text-end"><button id="addProblemBtn" class="btn-glass"><i class="fas fa-plus"></i> Add Problem Entry</button></div><table class="data-table w-full"><thead><tr><th>Product</th><th>Total Problems</th><th>Resolved</th><th>Open</th><th>Severity Index</th><th>Actions</th></tr></thead><tbody id="problemsTable"></tbody></table></div></div>
@@ -100,23 +95,28 @@
     <div id="settings-page" class="page-section"><div class="glass-card p-5"><h2>⚙️ Settings</h2><button id="resetDataBtn" class="btn-glass mt-3">Reset to Default Data</button></div></div>
 </div>
 <script>
-// ========== PROTECTION ==========
-if (!localStorage.getItem('unlocktool_token')) window.location.href = 'index.html';
-document.getElementById('logoutBtn')?.addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('unlocktool_token'); window.location.href = 'index.html'; });
+// ========== CHECK LOGIN (FIXED) ==========
+if (localStorage.getItem('unlocktool_token') !== 'authenticated') {
+    window.location.href = 'index.html';
+}
+// ========== LOGOUT ==========
+document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.removeItem('unlocktool_token');
+    window.location.href = 'index.html';
+});
 
-// ========== SIDEBAR TOGGLE (works on all screen sizes) ==========
+// ========== SIDEBAR TOGGLE (works on all devices) ==========
 const sidebar = document.getElementById('sidebar');
 const mainContent = document.getElementById('mainContent');
 const toggleBtn = document.getElementById('menuToggle');
 let isSidebarCollapsed = false;
 
-// On desktop, start with sidebar open (no collapsed class)
 if (window.innerWidth > 992) {
     sidebar.classList.remove('collapsed');
     mainContent.classList.remove('expanded');
     isSidebarCollapsed = false;
 } else {
-    // On mobile start collapsed
     sidebar.classList.add('collapsed');
     mainContent.classList.add('expanded');
     isSidebarCollapsed = true;
@@ -124,18 +124,13 @@ if (window.innerWidth > 992) {
 
 toggleBtn.addEventListener('click', () => {
     if (window.innerWidth > 992) {
-        // Desktop: toggle collapsed class
         sidebar.classList.toggle('collapsed');
         mainContent.classList.toggle('expanded');
         isSidebarCollapsed = sidebar.classList.contains('collapsed');
     } else {
-        // Mobile: use open class
         sidebar.classList.toggle('open');
-        // no margin change needed because CSS handles it
     }
 });
-
-// When window resizes, adjust behavior
 window.addEventListener('resize', () => {
     if (window.innerWidth > 992) {
         sidebar.classList.remove('open');
@@ -147,7 +142,6 @@ window.addEventListener('resize', () => {
             mainContent.classList.add('expanded');
         }
     } else {
-        // On mobile, ensure sidebar hidden by default unless open
         if (!sidebar.classList.contains('open')) {
             sidebar.classList.add('collapsed');
             mainContent.classList.add('expanded');
@@ -155,7 +149,7 @@ window.addEventListener('resize', () => {
     }
 });
 
-// ========== DATA & PERSISTENCE (same as before) ==========
+// ========== DATA & PERSISTENCE (full functionality) ==========
 const STORAGE_KEYS = { sales:'unlock_sales', clients:'unlock_clients', problems:'unlock_problems', issues:'unlock_issues' };
 const defaultSales = [
     { product: "unlocktool-3moi", units: 1240, revenue: 37200 },
@@ -261,7 +255,7 @@ function populateRecentIssues() {
         row.insertCell(5).innerHTML = issue.date;
         row.insertCell(6).innerHTML = `<i class="fas fa-edit action-btn edit-issue" data-idx="${idx}"></i> <i class="fas fa-trash action-btn delete-issue" data-idx="${idx}"></i>`;
     });
-    document.querySelectorAll('.edit-issue').forEach(btn => btn.addEventListener('click', () => { const i=btn.dataset.idx; issuesData[i].desc=prompt('Description',issuesData[i].desc)||issuesData[i].desc; issuesData[i].severity=prompt('Severity (Low/Medium/High/Critical)',issuesData[i].severity)||issuesData[i].severity; issuesData[i].status=prompt('Status (Open/In Progress/Resolved)',issuesData[i].status)||issuesData[i].status; persistAll(); refreshAll(); }));
+    document.querySelectorAll('.edit-issue').forEach(btn => btn.addEventListener('click', () => { const i=btn.dataset.idx; issuesData[i].desc=prompt('Description',issuesData[i].desc)||issuesData[i].desc; issuesData[i].severity=prompt('Severity',issuesData[i].severity)||issuesData[i].severity; issuesData[i].status=prompt('Status',issuesData[i].status)||issuesData[i].status; persistAll(); refreshAll(); }));
     document.querySelectorAll('.delete-issue').forEach(btn => btn.addEventListener('click', () => { if(confirm('Delete issue?')){ issuesData.splice(btn.dataset.idx,1); persistAll(); refreshAll(); } }));
 }
 
